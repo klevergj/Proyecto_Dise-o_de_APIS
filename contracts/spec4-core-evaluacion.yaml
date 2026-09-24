@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: Servicio de Evaluacion de Credito (Core) - Resuelve
+  version: "1.0.0"
+  description: Motor de reglas de negocio. Orquesta Adapter Buro Externo, Repositorio Interno y dispara Servicio de Auditoria.
+servers:
+  - url: http://evaluacion.internal/v1
+paths:
+  /evaluar:
+    post:
+      summary: Ejecuta el motor de reglas sobre una solicitud de credito
+      operationId: evaluarCredito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudCore'
+      responses:
+        '200':
+          description: Decision del motor de reglas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionCore'
+  /evaluaciones/{id}:
+    get:
+      summary: Consulta el estado de una evaluacion previa
+      operationId: obtenerEvaluacionCore
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Decision almacenada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionCore'
+components:
+  schemas:
+    SolicitudCore:
+      type: object
+      required: [identificacion, montoSolicitado, plazoMeses]
+      properties:
+        identificacion: { type: string }
+        montoSolicitado: { type: number }
+        plazoMeses: { type: integer }
+        tiendaId: { type: string }
+    DecisionCore:
+      type: object
+      properties:
+        idEvaluacion: { type: string, format: uuid }
+        decision: { type: string, enum: [APROBADO, RECHAZADO, REVISION_MANUAL] }
+        motivo: { type: string }
+        fecha: { type: string, format: date-time }
+        consultaBuroRealizada:
+          type: boolean
+          description: true si el motor tuvo que llamar al Adapter Buro Externo, false si se resolvio solo con Repositorio Interno
+        reglasAplicadas:
+          type: array
+          items: { type: string }
+          description: Nombres de las reglas (estrategias) que participaron en la decision, en orden

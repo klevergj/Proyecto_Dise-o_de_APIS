@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Simulador de Buro Externo - Resuelve
+  version: "1.0.0"
+  description: Simula un buro de credito real. Incluye modo de fallo/latencia controlada para pruebas de resiliencia.
+servers:
+  - url: http://buro-simulado.internal/v1
+paths:
+  /score/{identificacion}:
+    get:
+      summary: Consulta el score crediticio simulado de un cliente
+      operationId: consultarScore
+      parameters:
+        - name: identificacion
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Score obtenido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreBuro'
+        '503':
+          description: Buro no disponible (modo de fallo simulado activo)
+        '504':
+          description: Timeout simulado
+  /admin/escenario:
+    post:
+      summary: Configura el escenario simulado (uso interno para demos y pruebas de resiliencia)
+      operationId: configurarEscenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscenarioSimulado'
+      responses:
+        '204':
+          description: Escenario aplicado
+components:
+  schemas:
+    ScoreBuro:
+      type: object
+      properties:
+        identificacion: { type: string }
+        score:
+          type: integer
+          minimum: 300
+          maximum: 850
+        reportadoEnMora: { type: boolean }
+    EscenarioSimulado:
+      type: object
+      properties:
+        modo:
+          type: string
+          enum: [NORMAL, LATENCIA_ALTA, CAIDO]
+        latenciaMs:
+          type: integer
+          description: Solo aplica si modo = LATENCIA_ALTA
